@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gamify Physics</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Interactive Physics Lab</p>
+      <h1>Gamify Physics</h1>
+      <p class="subtitle">Drag, push, and stretch virtual experiments to unlock the next set of wave and motion mysteries.</p>
+      <div class="hero-actions">
+        <button id="resumeButton" class="primary">Resume unlocked level</button>
+        <button id="resetButton" class="ghost">Reset progress</button>
+      </div>
+    </div>
+    <div class="progress-card">
+      <p class="label">Unlocked</p>
+      <p class="progress" id="progressText">0 / 0</p>
+      <div class="progress-bar">
+        <div id="progressBarFill"></div>
+      </div>
+      <p class="hint">Complete a challenge to unlock the next topic.</p>
+    </div>
+  </header>
+
+  <main>
+    <aside class="level-list">
+      <h2>Level Select</h2>
+      <ul id="levelList"></ul>
+    </aside>
+
+    <section class="stage">
+      <div class="stage-head">
+        <div>
+          <p class="eyebrow" id="levelCategory">Level 1</p>
+          <h2 id="levelTitle">Choose a level</h2>
+          <p id="levelSummary" class="subtitle"></p>
+        </div>
+        <div class="goal">
+          <p class="label">Goal</p>
+          <p id="levelGoal">Pick a level to start experimenting.</p>
+        </div>
+      </div>
+
+      <div class="stage-body">
+        <div id="playArea" class="play-area"></div>
+        <div id="challengePanel" class="challenge-panel">
+          <div class="panel-card" id="instructionsCard"></div>
+          <div class="panel-card" id="quizCard"></div>
+          <div class="panel-card" id="statusCard"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Built for fast hosting on GitHub Pages. Progress is saved locally per browser.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
