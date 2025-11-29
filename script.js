@@ -21,6 +21,10 @@ const levels = [
     category: 'Movement by Forces',
     summary: 'Drag the runner, set a timer, and discover how distance and time build speed.',
     goal: 'Hit a speed between 6 and 8 m/s.',
+    intro: [
+      'Preview the meter markings and time slider before you run the experiment.',
+      'Notice how the track ruler helps you measure distance at a glance.',
+    ],
     setup: setupSpeedLevel,
   },
   {
@@ -29,6 +33,10 @@ const levels = [
     category: 'Movement by Forces',
     summary: 'Stack pushes to see how velocity changes when acceleration is present.',
     goal: 'Reach 10 m/s in five pushes or fewer.',
+    intro: [
+      'Read how acceleration compounds with every push before the cart rolls.',
+      'Watch the speed gauge fill as you add or remove force.',
+    ],
     setup: setupAccelerationLevel,
   },
   {
@@ -37,6 +45,10 @@ const levels = [
     category: 'Thinking Scientifically',
     summary: 'Tune a constant speed and watch position-time data draw itself.',
     goal: 'Produce a slope near 2 m/s on the graph.',
+    intro: [
+      'Preview the graph grid so you know which axes you are reading.',
+      'See where the runner will start before plotting the data.',
+    ],
     setup: setupGraphLevel,
   },
   {
@@ -45,6 +57,10 @@ const levels = [
     category: 'Movement by Forces',
     summary: 'Adjust a velocity vector and keep speed steady while steering.',
     goal: 'Aim the vector north while holding speed between 5–7 m/s.',
+    intro: [
+      'Glance at the compass labels so you know what 90° represents.',
+      'You will rotate the arrow without letting the speed bar drift.',
+    ],
     setup: setupDirectionLevel,
   },
   {
@@ -53,6 +69,10 @@ const levels = [
     category: 'Movement by Forces',
     summary: 'Slide a puck on different surfaces to feel how resistive forces slow motion.',
     goal: 'Stop within 40 px of the finish flag.',
+    intro: [
+      'Read how friction changes the “heat bar” before sending the puck.',
+      'Use the ruler to see how far you coast toward the flag.',
+    ],
     setup: setupFrictionLevel,
   },
   {
@@ -61,6 +81,10 @@ const levels = [
     category: 'Waves',
     summary: 'Toggle between transverse and longitudinal views, then shape the wave.',
     goal: 'Show a transverse wave with amplitude between 30–40.',
+    intro: [
+      'Skim the wave grid and baseline before drawing any energy.',
+      'Notice how the amplitude ruler shows energy level changes.',
+    ],
     setup: setupWaveLevel,
   },
 ];
@@ -167,8 +191,78 @@ function loadLevel(id) {
   levelGoal.textContent = lvl.goal;
   levelCategory.textContent = lvl.category;
 
-  lvl.setup();
+  showIntro(lvl, () => {
+    playArea.innerHTML = '';
+    lvl.setup();
+    renderLevelList();
+  });
   renderLevelList();
+}
+
+function showIntro(level, onStart) {
+  const overlay = document.createElement('div');
+  overlay.className = 'play-overlay';
+  const card = document.createElement('div');
+  card.className = 'intro-card';
+  card.innerHTML = `
+    <p class="eyebrow">Mission Brief</p>
+    <h3>${level.title}</h3>
+    <p class="subtitle">${level.summary}</p>
+  `;
+
+  const list = document.createElement('ul');
+  list.className = 'intro-list';
+  (level.intro || []).forEach((item) => {
+    const li = document.createElement('li');
+    li.textContent = item;
+    list.appendChild(li);
+  });
+  card.appendChild(list);
+
+  const startBtn = document.createElement('button');
+  startBtn.textContent = 'Enter the lab';
+  startBtn.className = 'primary';
+  startBtn.addEventListener('click', onStart);
+  card.appendChild(startBtn);
+
+  overlay.appendChild(card);
+  playArea.appendChild(overlay);
+
+  instructionsCard.innerHTML = '<h3>Read first</h3><p>Start the lab to reveal controls and track your status.</p>';
+  quizCard.innerHTML = '<h3>Checkpoint</h3><p>Quizzes appear after you begin.</p>';
+  statusCard.innerHTML = '<h3>Status</h3><p class="status-warn">Click enter to load the interactive lab.</p>';
+}
+
+function addTrackRuler(track, divisions, unit = 'm') {
+  const ruler = document.createElement('div');
+  ruler.className = 'ruler';
+  for (let i = 0; i <= divisions; i += 1) {
+    const tick = document.createElement('div');
+    tick.className = 'tick';
+    tick.style.left = `${(i / divisions) * 100}%`;
+    const label = document.createElement('span');
+    label.className = 'tick-label';
+    label.textContent = `${i}${unit}`;
+    tick.appendChild(label);
+    ruler.appendChild(tick);
+  }
+  track.appendChild(ruler);
+}
+
+function createGauge(label, unit) {
+  const wrap = document.createElement('div');
+  wrap.className = 'gauge';
+  wrap.innerHTML = `<div class="label">${label}</div>`;
+  const bar = document.createElement('div');
+  bar.className = 'gauge-bar';
+  const fill = document.createElement('div');
+  fill.className = 'gauge-fill';
+  const value = document.createElement('span');
+  value.className = 'gauge-value';
+  value.textContent = `0 ${unit}`;
+  bar.appendChild(fill);
+  wrap.append(bar, value);
+  return { wrap, fill, value };
 }
 
 // Level implementations
@@ -178,6 +272,7 @@ function setupSpeedLevel() {
   const runner = document.createElement('div');
   runner.className = 'runner';
   track.appendChild(runner);
+  addTrackRuler(track, 10, 'm');
   const baseX = track.clientWidth * 0.1;
   runner.style.left = `${baseX}px`;
   runner.style.top = '50%';
@@ -198,6 +293,8 @@ function setupSpeedLevel() {
 
   const info = document.createElement('div');
   info.append(timeLabel, timeInput, dataPills);
+  const speedGauge = createGauge('Measured speed', 'm/s');
+  info.appendChild(speedGauge.wrap);
   instructionsCard.innerHTML = '<h3>Experiment</h3><p>Drag the runner to set a travel distance, then slide the timer to compute speed.</p>';
   instructionsCard.appendChild(info);
 
@@ -218,6 +315,9 @@ function setupSpeedLevel() {
     const speed = meters / time;
     timeLabel.textContent = `Timer: ${time.toFixed(1)} s | Distance: ${meters} m`;
     speedLabel.textContent = `Speed: ${speed.toFixed(2)} m/s`;
+    const percent = Math.min(speed / 12, 1) * 100;
+    speedGauge.fill.style.width = `${percent}%`;
+    speedGauge.value.textContent = `${speed.toFixed(2)} m/s`;
     return { speed };
   }
 
@@ -266,6 +366,7 @@ function setupAccelerationLevel() {
   cart.style.left = '10%';
   cart.style.top = '45%';
   track.appendChild(cart);
+  addTrackRuler(track, 8, 'm');
 
   let velocity = 0;
   let pushes = 0;
@@ -277,6 +378,7 @@ function setupAccelerationLevel() {
   const brakeButton = document.createElement('button');
   brakeButton.textContent = 'Brake (-1 m/s)';
   brakeButton.className = 'ghost';
+  const velocityGauge = createGauge('Velocity', 'm/s');
 
   instructionsCard.innerHTML = '<h3>Experiment</h3><p>Every push adds acceleration. Keep track of how velocity changes over each push.</p>';
   const info = createInfoPills([
@@ -289,7 +391,7 @@ function setupAccelerationLevel() {
   controls.className = 'hero-actions';
   controls.append(pushButton, brakeButton);
   quizCard.innerHTML = '<h3>Checkpoint</h3>';
-  quizCard.append(velocityLabel, pushesLabel, controls);
+  quizCard.append(velocityLabel, pushesLabel, velocityGauge.wrap, controls);
 
   function render() {
     velocityLabel.textContent = `Velocity: ${velocity.toFixed(1)} m/s`;
@@ -297,6 +399,8 @@ function setupAccelerationLevel() {
     const trackRect = track.getBoundingClientRect();
     const progress = Math.min(velocity / 12, 1);
     cart.style.left = `${progress * (trackRect.width - 60) + 10}px`;
+    velocityGauge.fill.style.width = `${progress * 100}%`;
+    velocityGauge.value.textContent = `${velocity.toFixed(1)} m/s`;
   }
 
   function evaluate() {
@@ -334,6 +438,7 @@ function setupGraphLevel() {
   track.appendChild(runner);
   runner.style.left = '10%';
   runner.style.top = '60%';
+  addTrackRuler(track, 6, 's');
 
   const canvas = document.createElement('canvas');
   canvas.width = track.clientWidth - 40;
@@ -367,8 +472,21 @@ function setupGraphLevel() {
   function resetGraph() {
     data = [];
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
     ctx.lineWidth = 1;
+    for (let gx = 0; gx <= canvas.width; gx += canvas.width / 8) {
+      ctx.beginPath();
+      ctx.moveTo(gx, 0);
+      ctx.lineTo(gx, canvas.height);
+      ctx.stroke();
+    }
+    for (let gy = 0; gy <= canvas.height; gy += canvas.height / 6) {
+      ctx.beginPath();
+      ctx.moveTo(0, gy);
+      ctx.lineTo(canvas.width, gy);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
     ctx.beginPath();
     ctx.moveTo(40, 10);
     ctx.lineTo(40, canvas.height - 10);
@@ -425,6 +543,16 @@ function setupGraphLevel() {
 function setupDirectionLevel() {
   playArea.innerHTML = '<div class="track"></div><div class="arrow"></div>';
   const arrow = playArea.querySelector('.arrow');
+  const compass = document.createElement('div');
+  compass.className = 'compass';
+  ['N', 'E', 'S', 'W'].forEach((dir) => {
+    const label = document.createElement('span');
+    label.textContent = dir;
+    label.className = 'compass-label';
+    label.dataset.dir = dir;
+    compass.appendChild(label);
+  });
+  playArea.appendChild(compass);
   const speedSlider = document.createElement('input');
   speedSlider.type = 'range';
   speedSlider.min = 2;
@@ -461,6 +589,7 @@ function setupDirectionLevel() {
     angleLabel.textContent = `Heading: ${angle.toFixed(0)}°`;
     speedLabel.textContent = `Speed: ${speed.toFixed(1)} m/s`;
     arrow.style.transform = `translateY(-50%) rotate(${angle}deg)`;
+    compass.style.transform = `rotate(-${angle}deg)`;
   }
 
   render();
@@ -489,6 +618,7 @@ function setupFrictionLevel() {
   puck.style.left = '30px';
   puck.style.top = '50%';
   track.appendChild(puck);
+  addTrackRuler(track, 10, 'm');
 
   const frictionSlider = document.createElement('input');
   frictionSlider.type = 'range';
@@ -501,6 +631,9 @@ function setupFrictionLevel() {
   pushBtn.className = 'primary';
   const frictionLabel = document.createElement('p');
   const stopLabel = document.createElement('p');
+  const frictionHeat = document.createElement('div');
+  frictionHeat.className = 'friction-heat';
+  frictionHeat.innerHTML = '<div class="heat-fill"></div><span class="heat-value">μ</span>';
 
   instructionsCard.innerHTML = '<h3>Experiment</h3><p>Increase friction to slow faster or decrease it to slide longer. Try to coast to the finish flag.</p>';
   const info = createInfoPills([
@@ -512,7 +645,7 @@ function setupFrictionLevel() {
   quizCard.innerHTML = '<h3>Checkpoint</h3>';
   const quiz = document.createElement('div');
   quiz.className = 'quiz';
-  quiz.append(frictionLabel, frictionSlider, pushBtn, stopLabel);
+  quiz.append(frictionLabel, frictionSlider, frictionHeat, pushBtn, stopLabel);
   quizCard.append(quiz);
 
   let animationId = null;
@@ -522,10 +655,16 @@ function setupFrictionLevel() {
   }
 
   function updateLabels(stopX = null) {
-    frictionLabel.textContent = `Friction: ${(Number(frictionSlider.value) * 100).toFixed(1)} N (scaled)`;
+    const mu = Number(frictionSlider.value);
+    frictionLabel.textContent = `Friction: ${(mu * 100).toFixed(1)} N (scaled)`;
     if (stopX != null) {
-      stopLabel.textContent = `Stopped at ${stopX.toFixed(0)} px`; 
+      stopLabel.textContent = `Stopped at ${stopX.toFixed(0)} px`;
     }
+    const fill = frictionHeat.querySelector('.heat-fill');
+    const label = frictionHeat.querySelector('.heat-value');
+    const percent = ((mu - Number(frictionSlider.min)) / (Number(frictionSlider.max) - Number(frictionSlider.min))) * 100;
+    fill.style.width = `${percent}%`;
+    label.textContent = `Heat: ${mu.toFixed(2)}`;
   }
 
   function simulate() {
@@ -570,6 +709,19 @@ function setupWaveLevel() {
   canvas.className = 'wave-canvas';
   playArea.appendChild(canvas);
   const ctx = canvas.getContext('2d');
+  const ampRuler = document.createElement('div');
+  ampRuler.className = 'ruler vertical';
+  for (let i = 0; i <= 6; i += 1) {
+    const tick = document.createElement('div');
+    tick.className = 'tick';
+    tick.style.bottom = `${(i / 6) * 100}%`;
+    const label = document.createElement('span');
+    label.className = 'tick-label';
+    label.textContent = `${i * 10}`;
+    tick.appendChild(label);
+    ampRuler.appendChild(tick);
+  }
+  playArea.appendChild(ampRuler);
 
   const typeSelect = document.createElement('select');
   ['Transverse', 'Longitudinal'].forEach((t) => {
@@ -611,6 +763,19 @@ function setupWaveLevel() {
 
   function drawWave() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    for (let gx = 20; gx <= canvas.width - 20; gx += 40) {
+      ctx.beginPath();
+      ctx.moveTo(gx, 10);
+      ctx.lineTo(gx, canvas.height - 10);
+      ctx.stroke();
+    }
+    for (let gy = 40; gy <= canvas.height - 40; gy += 40) {
+      ctx.beginPath();
+      ctx.moveTo(10, gy);
+      ctx.lineTo(canvas.width - 10, gy);
+      ctx.stroke();
+    }
     ctx.strokeStyle = 'rgba(255,255,255,0.4)';
     ctx.lineWidth = 1;
     ctx.beginPath();

@@ -224,6 +224,9 @@ main {
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.08);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
 .challenge-panel {
@@ -297,6 +300,68 @@ footer {
   border-radius: 12px;
 }
 
+.ruler {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 12px;
+  height: 24px;
+  display: flex;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.ruler.vertical {
+  left: auto;
+  right: 6px;
+  top: 10px;
+  bottom: 10px;
+  width: 48px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.ruler .tick,
+.ruler.vertical .tick {
+  position: relative;
+  flex: 1;
+}
+
+.ruler .tick::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.ruler.vertical .tick::before {
+  left: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 1px;
+  width: 10px;
+}
+
+.tick-label {
+  position: absolute;
+  bottom: 10px;
+  left: -6px;
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.ruler.vertical .tick-label {
+  bottom: auto;
+  top: 50%;
+  left: 6px;
+  transform: translateY(-50%);
+}
+
 .runner,
 .cart,
 .mass {
@@ -358,6 +423,112 @@ footer {
     rgba(255, 255, 255, 0.04);
   border-radius: 0.8rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.play-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 12, 24, 0.9);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  z-index: 2;
+}
+
+.intro-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 1rem;
+  padding: 1.2rem 1.4rem;
+  max-width: 520px;
+  box-shadow: var(--shadow);
+}
+
+.intro-list {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.intro-list li + li {
+  margin-top: 0.4rem;
+}
+
+.gauge {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.8rem;
+  padding: 0.6rem;
+}
+
+.gauge-bar {
+  width: 100%;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  margin: 0.4rem 0;
+}
+
+.gauge-fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: width 160ms ease;
+}
+
+.gauge-value {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.compass {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  top: 50%;
+  left: 60%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  transition: transform 120ms ease;
+}
+
+.compass-label {
+  position: absolute;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.compass-label[data-dir='N'] { top: 6px; left: 50%; transform: translateX(-50%); }
+.compass-label[data-dir='S'] { bottom: 6px; left: 50%; transform: translateX(-50%); }
+.compass-label[data-dir='E'] { right: 6px; top: 50%; transform: translateY(-50%); }
+.compass-label[data-dir='W'] { left: 6px; top: 50%; transform: translateY(-50%); }
+
+.friction-heat {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.8rem;
+  padding: 0.5rem;
+  position: relative;
+}
+
+.friction-heat .heat-fill {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--accent);
+  width: 0%;
+  transition: width 160ms ease;
+}
+
+.friction-heat .heat-value {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.85rem;
+  color: var(--muted);
 }
 
 .status-good {
