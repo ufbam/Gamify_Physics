@@ -441,7 +441,7 @@ function setupGraphLevel() {
   addTrackRuler(track, 6, 's');
 
   const canvas = document.createElement('canvas');
-  canvas.width = track.clientWidth - 40;
+  canvas.width = Math.max(playArea.clientWidth - 60, 420);
   canvas.height = 180;
   canvas.className = 'wave-canvas';
   playArea.appendChild(canvas);
@@ -469,10 +469,9 @@ function setupGraphLevel() {
   quizCard.append(speedSlider, startBtn, slopeLabel);
 
   let data = [];
-  function resetGraph() {
-    data = [];
+  function drawGrid() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
     ctx.lineWidth = 1;
     for (let gx = 0; gx <= canvas.width; gx += canvas.width / 8) {
       ctx.beginPath();
@@ -488,28 +487,56 @@ function setupGraphLevel() {
     }
     ctx.strokeStyle = 'rgba(255,255,255,0.25)';
     ctx.beginPath();
-    ctx.moveTo(40, 10);
-    ctx.lineTo(40, canvas.height - 10);
-    ctx.lineTo(canvas.width - 10, canvas.height - 10);
+    ctx.moveTo(50, 10);
+    ctx.lineTo(50, canvas.height - 20);
+    ctx.lineTo(canvas.width - 16, canvas.height - 20);
     ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.font = '12px Inter, system-ui';
+    ctx.fillText('t (s)', canvas.width - 40, canvas.height - 26);
+    ctx.save();
+    ctx.translate(14, 20);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('position (m)', 0, 0);
+    ctx.restore();
+  }
+
+  function resetGraph() {
+    data = [];
+    drawGrid();
   }
 
   resetGraph();
 
   function plot() {
+    drawGrid();
     if (data.length < 2) return;
     ctx.strokeStyle = '#66e4ff';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    const maxT = Math.max(...data.map((d) => d.t));
-    const maxX = Math.max(...data.map((d) => d.x), 1);
+    const maxT = Math.max(...data.map((d) => d.t), 0.1);
+    const maxX = Math.max(...data.map((d) => d.x), 0.1);
     data.forEach((d, i) => {
-      const px = 40 + (d.t / maxT) * (canvas.width - 60);
-      const py = canvas.height - 10 - (d.x / maxX) * (canvas.height - 40);
+      const px = 50 + (d.t / maxT) * (canvas.width - 80);
+      const py = canvas.height - 20 - (d.x / maxX) * (canvas.height - 60);
       if (i === 0) ctx.moveTo(px, py);
       else ctx.lineTo(px, py);
     });
     ctx.stroke();
+
+    const last = data[data.length - 1];
+    ctx.fillStyle = '#66e4ff';
+    ctx.beginPath();
+    const markerX = 50 + (last.t / maxT) * (canvas.width - 80);
+    const markerY = canvas.height - 20 - (last.x / maxX) * (canvas.height - 60);
+    ctx.arc(markerX, markerY, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = '11px Inter, system-ui';
+    ctx.fillText(`${last.t.toFixed(1)}s`, markerX - 14, canvas.height - 6);
+    ctx.fillText(`${last.x.toFixed(1)}m`, 6, markerY + 4);
   }
 
   function runSimulation() {
@@ -517,23 +544,41 @@ function setupGraphLevel() {
     const speed = Number(speedSlider.value);
     const duration = 4;
     const samples = 40;
-    data = [];
-    for (let i = 0; i <= samples; i += 1) {
-      const t = (i / samples) * duration;
-      const x = speed * t;
-      data.push({ t, x });
+    const start = performance.now();
+    let finished = false;
+
+    function step(now) {
+      const elapsed = Math.min((now - start) / 1000, duration);
+      const x = speed * elapsed;
+      const t = elapsed;
+
+      if (data.length === 0 || t - data[data.length - 1].t >= duration / samples) {
+        data.push({ t, x });
+      }
+
+      const progress = t / duration;
+      runner.style.left = `${10 + progress * 80}%`;
+      runner.style.top = `${60 - progress * 10}%`;
+
+      plot();
+      slopeLabel.textContent = `Time: ${t.toFixed(1)} s | Position: ${x.toFixed(1)} m | Slope: ${speed.toFixed(2)} m/s`;
+
+      if (elapsed >= duration && !finished) {
+        finished = true;
+        const slope = speed;
+        if (slope >= 1.5 && slope <= 2.5) {
+          setStatus('Line is nearly straight with target slope. Unlocking next!', 'good');
+          completeLevel('graphs');
+        } else {
+          setStatus('Slope misses the target range. Adjust the speed slider.', 'warn');
+        }
+        return;
+      }
+
+      requestAnimationFrame(step);
     }
-    const finalX = speed * duration;
-    runner.style.left = `${Math.min(0.1 + finalX * 10, 0.9) * 100}%`;
-    plot();
-    const slope = finalX / duration;
-    slopeLabel.textContent = `Observed slope: ${slope.toFixed(2)} m/s`;
-    if (slope >= 1.5 && slope <= 2.5) {
-      setStatus('Line is nearly straight with target slope. Unlocking next!', 'good');
-      completeLevel('graphs');
-    } else {
-      setStatus('Slope misses the target range. Adjust the speed slider.', 'warn');
-    }
+
+    requestAnimationFrame(step);
   }
 
   startBtn.addEventListener('click', runSimulation);
